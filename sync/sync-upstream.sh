@@ -10,7 +10,6 @@ trap 'rm -rf "$WORK"' EXIT
 
 log() { echo "[sync] $*"; }
 
-# 已知上游地址；失效后依次走 API / 搜索 / 官网发现
 KNOWN_CANDIDATES=(
   "https://github.com/kangarooking/cangjie-skill.git"
 )
@@ -142,7 +141,19 @@ printf '%s\n' "$UPSTREAM" > "$STATE_FILE"
 
 git add -A
 if git diff --cached --quiet; then
-  log "already up to date: $UPSTREAM"
+  # 上游无变更时保活：GitHub 会在仓库 60 天无提交后停用 scheduled workflow
+  # Keep-alive: GitHub disables scheduled workflows after 60 days without commits
+  HEARTBEAT="sync/last-check.txt"
+  if [ ! -f "$HEARTBEAT" ] || [ -n "$(find "$HEARTBEAT" -mtime +6 2>/dev/null)" ]; then
+    date -u +"%Y-%m-%dT%H:%M:%SZ" > "$HEARTBEAT"
+    git add "$HEARTBEAT"
+    git -c user.name="sync-bot" -c user.email="sync-bot@users.noreply.github.com" \
+      commit -m "chore: heartbeat $(date -u +%F)" >/dev/null
+    git push
+    log "no upstream change; heartbeat committed"
+  else
+    log "already up to date: $UPSTREAM"
+  fi
   exit 0
 fi
 
