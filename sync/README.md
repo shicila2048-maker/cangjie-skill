@@ -25,6 +25,11 @@ This repository is an automated mirror of `kangarooking/cangjie-skill`.
 全部失败时保持仓库现有内容不变并报错，不会破坏已有内容。
 If all discovery methods fail, the repository content is left untouched and the run fails loudly.
 
+## 保活 / Keep-alive
+
+上游无更新时，脚本每 7 天提交一次 `sync/last-check.txt` 心跳，避免 GitHub 在仓库 60 天无提交后自动停用定时工作流。
+When upstream has no changes, a heartbeat is committed every 7 days so GitHub does not disable the scheduled workflow after 60 days without commits.
+
 ## 手动触发 / Manual trigger
 
 Actions → **Sync upstream cangjie-skill** → *Run workflow*。也可在本地运行：
