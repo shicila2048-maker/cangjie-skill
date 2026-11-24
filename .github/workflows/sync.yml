@@ -1,0 +1,38 @@
+name: Sync upstream cangjie-skill
+
+# 每天 UTC 20:00（北京时间次日 04:00）自动检查并同步上游。
+# 作者迁移仓库地址时，sync/sync-upstream.sh 会自动发现新地址。
+on:
+  schedule:
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sync.yml"
+      - "sync/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Sync from upstream (auto-discovery)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x sync/sync-upstream.sh
+          bash sync/sync-upstream.sh
